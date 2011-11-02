@@ -1,0 +1,191 @@
+<?php
+/**
+ * @file
+ * Contains core functions for the Tweaker module.
+ */
+
+/**
+ * Include additional files.
+ */
+foreach (module_list() as $module) {
+  if (file_exists($file = dirname(__FILE__) . "/includes/{$module}.inc")) {
+    require_once $file;
+  }
+}
+
+/**
+ * Implements hook_init().
+ */
+function tweaker_init() {
+  $file = 'public://tweaker/tweaker.inc';
+
+  // Rebuild file if it doesn't exist or of the MD5 hash has changed via editing
+  // from an outside source.
+  if (!file_exists($file) || md5_file($file) != variable_get('tweaker_md5', '')) {
+    tweaker_cache_rebuild($file);
+  }
+
+  require_once($file);
+}
+
+/**
+ * Implements hook_flush_caches
+ *
+ * @TODO - Breaks hook_menu_alter() as php_callback reaction refs a function
+ *   then rebuilds with new function.
+ */
+function tweaker_flush_caches() {
+  //$file = 'public://tweaker/tweaker.inc';
+  //if (file_exists($file)) {
+  //  file_unmanaged_delete($file);
+  //}
+}
+
+/**
+ * Implements hook_theme().
+ */
+function tweaker_theme() {
+  $items = array();
+
+  $items['tweaker'] = array(
+    'variables' => array(
+      'hooks' => array(),
+    ),
+    'path' => drupal_get_path('module', 'tweaker') . '/templates',
+    'template' => 'tweaker',
+  );
+
+  return $items;
+}
+
+/**
+ *
+ */
+function tweaker_cache_rebuild($file) {
+  $pathinfo = pathinfo($file);
+  if (file_prepare_directory($pathinfo['dirname'], FILE_CREATE_DIRECTORY)) {
+    $info = tweaker_get_info();
+    $tweaks = tweaker_crud_load_all();
+
+    // Group tweaks by hook.
+    $hooks = array();
+    foreach ($tweaks as $tweak) {
+      if (!empty($tweak->hook)) {
+        $hooks[$tweak->hook]['tweaks'][] = clone $tweak;
+      }
+    }
+
+    // Process tweaks by hook.
+    foreach ($hooks as $hook => $data) {
+      if (isset($info['hooks'][$hook])) {
+        $hooks[$hook]['arguments'] = isset($info['hooks'][$hook]['arguments'])
+          ? implode(', ', array_keys($info['hooks'][$hook]['arguments']))
+          : '';
+        $hooks[$hook]['assets'] = array();
+
+        foreach ($data['tweaks'] as $delta => $tweak) {
+
+          // Conditions.
+          $operator = current(array_splice($tweak->conditions, 0, 1)) == TRUE ? '&&' : '||';
+          $conditions = array();
+          if (!empty($tweak->conditions)) {
+            foreach (element_children($tweak->conditions) as $key) {
+              // @TODO - Define conditions in info hook with callback.
+              if (function_exists($function = "tweaker_conditions_{$tweak->conditions[$key]['type']}")) {
+                $conditions[] = $function($tweak->conditions[$key], $tweak);
+              }
+            }
+          }
+          $conditions = empty($conditions) ? array('1 == 2') : $conditions;
+          $hooks[$hook]['tweaks'][$delta]->conditions = implode(" {$operator} ", $conditions);
+
+          // Reactions.
+          $reactions = array();
+          if (!empty($tweak->reactions)) {
+            foreach (element_children($tweak->reactions) as $key) {
+              // @TODO - Define reactons in info hook with callback.
+              if (function_exists($function = "tweaker_reactions_{$tweak->reactions[$key]['type']}")) {
+                $reactions[] = $function($tweak->reactions[$key], $tweak);
+              }
+            }
+          }
+          $hooks[$hook]['tweaks'][$delta]->reactions = implode("\n\n", $reactions);
+
+          // Assets.
+          if (isset($tweak->assets)) {
+            $hooks[$hook]['assets'] = array_merge($hooks[$hook]['assets'], $tweak->assets);
+            unset($tweak->assets);
+          }
+        }
+      }
+    }
+
+    // Write tweaks to static cache file.
+    file_put_contents($file, theme('tweaker', array('hooks' => $hooks)));
+    variable_set('tweaker_md5', md5_file($file));
+
+    // Rebuild registries to index newly created static cache file.
+    require_once($file);
+    registry_rebuild();
+    drupal_theme_rebuild();
+  }
+}
+
+/**
+ *
+ */
+function tweaker_crud_load_all($flush_cache = FALSE) {
+  static $tweaks = array();
+
+  if (!$tweaks || $flush_cache) {
+    ctools_include('export');
+    foreach (ctools_export_crud_load_all('tweaks') as $tweak) {
+      if (empty($tweak->disabled)) {
+        $tweaks[$tweak->name] = $tweak;
+      }
+    }
+  }
+
+  return $tweaks;
+}
+
+/**
+ *
+ */
+function tweaker_get_info() {
+  static $info;
+
+  if (empty($info)) {
+    $info = module_invoke_all('tweaker_info');
+  }
+
+  return $info;
+}
+
+/**
+ *
+ */
+function tweaker_prepare_arguments(&$arguments) {
+  foreach ($arguments as &$argument) {
+    switch ($argument['type']) {
+      case 'php':
+        $argument = $argument['value'];
+        break;
+
+      case 'regex':
+      case 'string':
+        $argument = "'{$argument['value']}'";
+        break;
+
+      case 'variable':
+        $index = '';
+        if (isset($argument['index'])) {
+          foreach (explode(':', $argument['index']) as $key) {
+            $index .= "['{$key}']";
+          }
+        }
+        $argument = "\${$argument['value']}{$index}";
+        break;
+    }
+  }
+}

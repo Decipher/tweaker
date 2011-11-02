@@ -1,0 +1,30 @@
+<?php
+/**
+ * @file
+ * Contains core functions for the Tweaker UI module.
+ */
+
+/**
+ * Include additional files.
+ */
+foreach (module_list() as $module) {
+  if (file_exists($file = dirname(__FILE__) . "/includes/{$module}.inc")) {
+    require_once $file;
+  }
+}
+
+/**
+ *
+ */
+function tweaker_ui_arguments_attach(&$form, &$form_state, $type, $value) {
+  $info = tweaker_get_info();
+
+  // Include callback file.
+  if (isset($info['arguments'][$type]) && file_exists($file = $info['arguments'][$type]['file'])) {
+    require_once $file;
+  }
+
+  if (function_exists($function = $info['arguments'][$type]['callback'])) {
+    $function($form, $form_state, $value);
+  }
+}

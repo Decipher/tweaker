@@ -1,0 +1,15 @@
+name = Tweaker UI
+description = @TODO
+dependencies[] = tweaker
+;package = Fields
+configure = admin/structure/formatters
+core = 7.x
+
+; Core files.
+files[] = tweaker_ui.module
+
+; Module integrations.
+files[] = includes/ctools.inc
+
+; CTools plugins.
+files[] = plugins/export_ui/tweaker_ui.inc
