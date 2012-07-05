@@ -138,7 +138,7 @@ function tweaker_reactions_php($reaction, &$tweak) {
 function tweaker_reactions_php_callback($reaction, &$tweak) {
   tweaker_prepare_arguments($reaction['arguments']);
 
-  $function = "_tweaker_reactions_php_callback_{$tweak->name}_" . rand(1000, 9999);
+  $function = "_tweaker_reactions_php_callback_{$tweak->name}_" . md5(serialize($reaction));
 
   $tweak->assets['php'][] = array(
     'function' => $function,

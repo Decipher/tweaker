@@ -1177,7 +1177,8 @@ class tweaker_ui extends ctools_export_ui {
    */
   function set_item_state($state, $js, $input, $item) {
     ctools_export_crud_set_status($this->plugin['schema'], $item, $state);
-    tweaker_flush_caches();
+    drupal_flush_all_caches();
+    variable_set('menu_rebuild_needed', TRUE);
 
     if (!$js) {
       drupal_goto(ctools_export_ui_plugin_base_path($this->plugin));

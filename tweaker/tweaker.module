@@ -4,6 +4,8 @@
  * Contains core functions for the Tweaker module.
  */
 
+define('TWEAKER_FILE', 'public://tweaker/tweaker.inc');
+
 /**
  * Include additional files.
  */
@@ -17,15 +19,13 @@ foreach (module_list() as $module) {
  * Implements hook_init().
  */
 function tweaker_init() {
-  $file = 'public://tweaker/tweaker.inc';
-
   // Rebuild file if it doesn't exist or of the MD5 hash has changed via editing
   // from an outside source.
-  if (!file_exists($file) || md5_file($file) != variable_get('tweaker_md5', '')) {
-    tweaker_cache_rebuild($file);
+  if (!file_exists(TWEAKER_FILE) || md5_file(TWEAKER_FILE) != variable_get('tweaker_md5', '')) {
+    tweaker_cache_rebuild();
   }
 
-  require_once($file);
+  require_once(TWEAKER_FILE);
 }
 
 /**
@@ -35,10 +35,10 @@ function tweaker_init() {
  *   then rebuilds with new function.
  */
 function tweaker_flush_caches() {
-  //$file = 'public://tweaker/tweaker.inc';
-  //if (file_exists($file)) {
-  //  file_unmanaged_delete($file);
-  //}
+  if (file_exists(TWEAKER_FILE)) {
+    file_unmanaged_delete(TWEAKER_FILE);
+  }
+  tweaker_init();
 }
 
 /**
@@ -61,8 +61,8 @@ function tweaker_theme() {
 /**
  *
  */
-function tweaker_cache_rebuild($file) {
-  $pathinfo = pathinfo($file);
+function tweaker_cache_rebuild() {
+  $pathinfo = pathinfo(TWEAKER_FILE);
   if (file_prepare_directory($pathinfo['dirname'], FILE_CREATE_DIRECTORY)) {
     $info = tweaker_get_info();
     $tweaks = tweaker_crud_load_all();
@@ -121,11 +121,11 @@ function tweaker_cache_rebuild($file) {
     }
 
     // Write tweaks to static cache file.
-    file_put_contents($file, theme('tweaker', array('hooks' => $hooks)));
-    variable_set('tweaker_md5', md5_file($file));
+    file_put_contents(TWEAKER_FILE, theme('tweaker', array('hooks' => $hooks)));
+    variable_set('tweaker_md5', md5_file(TWEAKER_FILE));
 
     // Rebuild registries to index newly created static cache file.
-    require_once($file);
+    require_once(TWEAKER_FILE);
     registry_rebuild();
     drupal_theme_rebuild();
   }
