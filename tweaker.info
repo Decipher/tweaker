@@ -1,0 +1,5 @@
+name = Tweaker
+description = @TODO
+dependencies[] = rules
+package = Rules
+core = 7.x

@@ -1,0 +1,24 @@
+<?php
+/**
+ * @file
+ * Contains core functions for the Tweaker module.
+ */
+
+/**
+ * Include additional files.
+ */
+foreach (module_list() as $module) {
+  if (file_exists($file = dirname(__FILE__) . "/includes/{$module}.inc")) {
+    require_once $file;
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function tweaker_module_implements_alter(&$implementations, $hook) {
+  if ('menu_alter' == $hook) {
+    unset($implementations['tweaker']);
+    $implementations['tweaker'] = FALSE;
+  }
+}

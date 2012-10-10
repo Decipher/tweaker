@@ -1,0 +1,9 @@
+name = Tweaker example
+description = Example feature for the Tweaker module.
+core = 7.x
+package = Rules
+dependencies[] = entity
+dependencies[] = rules
+dependencies[] = tweaker
+features[features_api][] = api:1
+features[rules_config][] = rules_blank_frontpage
