@@ -14,6 +14,15 @@ function tweaker_rules_action_info() {
 }
 
 /**
+ * Implements hook_rules_condition_info().
+ */
+function tweaker_rules_condition_info() {
+  $items = array();
+  drupal_alter('tweaker_rules_condition_info', $items);
+  return $items;
+}
+
+/**
  * Implements hook_rules_data_info().
  */
 function tweaker_rules_data_info() {
