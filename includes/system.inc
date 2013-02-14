@@ -374,7 +374,7 @@ function tweaker_menu_alter(&$items) {
           $parent = $items[$parent_path];
           if ($parent['access arguments'][0] == $parent_path) {
             array_shift($parent['access arguments']);
-            array_shift($parent['access arguments']);
+            $parent['access callback'] = array_shift($parent['access arguments']);
           }
           $item['access arguments'] = $parent['access arguments'];
           if (empty($item['access callback']) && !empty($parent['access callback'])) {
