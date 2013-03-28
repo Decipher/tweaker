@@ -26,6 +26,42 @@ function system_tweaker_rules_action_info_alter(&$items) {
     'group' => t('System'),
     'base' => 'tweaker_rules_action_form_set_error',
   );
+
+  $items['querystring_get'] = array(
+    'label' => t('Get query string'),
+    'group' => t('System'),
+    'parameter' => array(
+      'key' => array(
+        'type' => 'text',
+        'label' => t('Key'),
+      ),
+    ),
+    'provides' => array(
+      'querystring' => array(
+        'type' => 'text',
+        'label' => t('Query string'),
+      ),
+    ),
+    'base' => 'tweaker_rules_action_querystring_get',
+  );
+}
+
+/**
+ * Implements hook_tweaker_rules_condition_info_alter() on behalf of
+ * system.module.
+ */
+function system_tweaker_rules_condition_info_alter(&$items) {
+  $items['querystring_isset'] = array(
+    'label' => t('Query string is set'),
+    'group' => t('System'),
+    'parameter' => array(
+      'key' => array(
+        'type' => 'text',
+        'label' => t('Key'),
+      ),
+    ),
+    'base' => 'system_tweaker_condition_querystring_isset',
+  );
 }
 
 /**
@@ -419,7 +455,6 @@ function _tweaker_menu_access_callback() {
   return $access_callback;
 }
 
-
 /**
  * Implements hook_preprocess().
  */
@@ -432,4 +467,25 @@ function tweaker_preprocess(&$variables, $hook) {
  */
 function tweaker_rules_action_form_set_error($name, $message) {
   form_set_error($name, $message);
+}
+
+/**
+ * Rules action callback for 'querystring_get'.
+ */
+function tweaker_rules_action_querystring_get($key) {
+  $querystring = NULL;
+  if (system_tweaker_condition_querystring_isset($key)) {
+    $querystring = $_GET[$key];
+  }
+
+  return array(
+    'querystring' => $querystring,
+  );
+}
+
+/**
+ * Rules condition callback for 'querystring_isset'.
+ */
+function system_tweaker_condition_querystring_isset($key) {
+  return isset($_GET[$key]);
 }
