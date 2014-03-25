@@ -395,6 +395,8 @@ function _tweaker_form_validate(&$form, &$form_state) {
  * Implements hook_preprocess().
  */
 function tweaker_menu_alter(&$items) {
+  drupal_alter('tweaker_menu', $items);
+
   foreach ($items as $path => &$item) {
     // Invoke rules event.
     $item = (object) $item;
