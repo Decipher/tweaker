@@ -44,6 +44,22 @@ function system_tweaker_rules_action_info_alter(&$items) {
     ),
     'base' => 'tweaker_rules_action_querystring_get',
   );
+
+  $items['session_set'] = array(
+    'label' => t('Set a session variable'),
+    'group' => t('System'),
+    'parameter' => array(
+      'key' => array(
+        'type' => 'text',
+        'label' => t('Key'),
+      ),
+      'value' => array(
+        'type' => '*',
+        'label' => t('Value'),
+      ),
+    ),
+    'base' => 'tweaker_rules_action_session_get',
+  );
 }
 
 /**
@@ -490,4 +506,13 @@ function tweaker_rules_action_querystring_get($key) {
  */
 function system_tweaker_condition_querystring_isset($key) {
   return isset($_GET[$key]);
+}
+
+/**
+ * Rules action callback for 'session_set'.
+ */
+function tweaker_rules_action_session_get($key, $value) {
+  $merge = array();
+  drupal_array_set_nested_value($merge, explode('][', $key), $value);
+  $_SESSION = array_merge_recursive($_SESSION, $merge);
 }
