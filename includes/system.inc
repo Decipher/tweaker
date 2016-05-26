@@ -512,6 +512,10 @@ function system_tweaker_condition_querystring_isset($key) {
  * Rules action callback for 'session_set'.
  */
 function tweaker_rules_action_session_get($key, $value) {
+  if (!isset($_SESSION)) {
+    drupal_session_start();
+  }
+
   $merge = array();
   drupal_array_set_nested_value($merge, explode('][', $key), $value);
   $_SESSION = array_merge_recursive($_SESSION, $merge);
